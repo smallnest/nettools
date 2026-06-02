@@ -115,13 +115,6 @@ type trackingStat struct {
 	}
 }
 
-func newTrackingStat(c *config.Config, logger *log.Logger) *trackingStat {
-	s := stat.NewStat(c.ClientAddr, c.ServerAddrs[0],
-		c.ClientPortRange, c.ServerPortRange,
-		c.RateInSpan, c.Span, c.Delay, false, logger)
-	return &trackingStat{Stat: s}
-}
-
 func (t *trackingStat) Received(seq uint64, ts, rtt int64, hasBitflip bool) {
 	t.receivedCount.Add(1)
 	t.lastReceived.mu.Lock()

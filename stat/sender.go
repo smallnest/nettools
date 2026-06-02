@@ -86,7 +86,6 @@ func (s *udpStat) statOnce() {
 	}
 
 	s.lastID = b.id
-	lastID = b.id
 
 	sr := b.stat()
 
