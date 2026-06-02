@@ -1,0 +1,29 @@
+# Binaries
+output/
+bitflip
+!bitflip/
+bitflip6
+!bitflip6/
+
+# Test and coverage artifacts
+coverage.html
+coverage.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Internal (remove before open-source release)
+tasks/
+
+# Legacy
+.svn
+.tmp
+.download
+dist

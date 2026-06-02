@@ -1,0 +1,36 @@
+package codec
+
+import (
+	"net"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+)
+
+// EncodeUDPPacket constructs a raw UDP packet (with IPv4 header) carrying
+// the given payload. It computes UDP checksums and sets the specified
+// TOS and TTL values on the IP header.
+func EncodeUDPPacket(localIP, remoteIP net.IP, localPort, remotePort uint16, tos uint8, ttl int, payload []byte) ([]byte, error) {
+	ip := &layers.IPv4{
+		Version:  4,
+		TTL:      uint8(ttl),
+		SrcIP:    localIP,
+		DstIP:    remoteIP,
+		TOS:      tos,
+		Protocol: layers.IPProtocolUDP,
+	}
+	udp := &layers.UDP{
+		SrcPort: layers.UDPPort(localPort),
+		DstPort: layers.UDPPort(remotePort),
+	}
+	_ = udp.SetNetworkLayerForChecksum(ip)
+
+	buf := gopacket.NewSerializeBuffer()
+	opts := gopacket.SerializeOptions{
+		ComputeChecksums: true,
+		FixLengths:       true,
+	}
+
+	err := gopacket.SerializeLayers(buf, opts, udp, gopacket.Payload(payload))
+	return buf.Bytes(), err
+}
