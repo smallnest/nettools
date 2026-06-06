@@ -50,42 +50,15 @@ builds:
       - CGO_ENABLED=0
 
 archives:
-  - id: bitflip
+  - id: default
     ids:
       - bitflip
-    formats: ['tar.gz']
-    name_template: >-
-      {{ .Binary }}_
-      {{- .Version }}_
-      {{- .Os }}_
-      {{- .Arch }}
-
-  - id: bitflip6
-    ids:
       - bitflip6
-    formats: ['tar.gz']
-    name_template: >-
-      {{ .Binary }}_
-      {{- .Version }}_
-      {{- .Os }}_
-      {{- .Arch }}
-
-  - id: baize
-    ids:
       - baize
-    formats: ['tar.gz']
-    name_template: >-
-      {{ .Binary }}_
-      {{- .Version }}_
-      {{- .Os }}_
-      {{- .Arch }}
-
-  - id: lidar
-    ids:
       - lidar
     formats: ['tar.gz']
     name_template: >-
-      {{ .Binary }}_
+      {{ .ProjectName }}_
       {{- .Version }}_
       {{- .Os }}_
       {{- .Arch }}
