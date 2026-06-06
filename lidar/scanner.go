@@ -228,7 +228,7 @@ func (s *Scanner) processIPPacket(ipData []byte) {
 	// Determine target index from seq: each round sends one packet per target.
 	// packet 0 → target 0, packet 1 → target 1, ..., packet N-1 → target N-1,
 	// packet N → target 0, ...
-	targetIdx := int((seq - s.seqStart) % uint64(len(s.targets)))
+	targetIdx := int((seq - s.seqStart - 1) % uint64(len(s.targets)))
 	target := s.targets[targetIdx]
 
 	if targetIdx < 0 || targetIdx >= len(s.targets) {

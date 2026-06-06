@@ -40,12 +40,12 @@ func (s *Scanner) serveRaw(fd int, stopped *int64, stopCh <-chan struct{}) {
 
 		tv := syscall.NsecToTimeval(100 * time.Millisecond.Nanoseconds())
 		var readFds syscall.FdSet
-		readFds.Bits[fd/32] |= 1 << (uint(fd) % 32)
+		readFds.Bits[fd/64] |= 1 << (uint(fd) % 64)
 
 		if _, err := syscall.Select(fd+1, &readFds, nil, nil, &tv); err != nil {
 			continue
 		}
-		if readFds.Bits[fd/32]&(1<<(uint(fd)%32)) == 0 {
+		if readFds.Bits[fd/64]&(1<<(uint(fd)%64)) == 0 {
 			if atomic.LoadInt64(stopped) > 0 {
 				return
 			}
