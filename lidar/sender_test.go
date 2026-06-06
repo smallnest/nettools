@@ -16,12 +16,12 @@ func TestLidarSenderSendNoTimeout(t *testing.T) {
 	s := NewLidarSender(logger, false)
 
 	s.Send(stat.StatResult{
-		Timestamp:  time.Date(2024, 1, 15, 10, 30, 45, 0, time.UTC),
-		ClientAddr: "10.0.0.1",
-		ServerAddr: "1.2.3.4",
-		Sent:       10,
-		Received:   10,
-		Loss:       0,
+		Timestamp:   time.Date(2024, 1, 15, 10, 30, 45, 0, time.UTC),
+		ClientAddr:  "10.0.0.1",
+		ServerAddr:  "1.2.3.4",
+		Sent:        10,
+		Received:    10,
+		Loss:        0,
 		SynAckCount: 10,
 	})
 
@@ -49,12 +49,12 @@ func TestLidarSenderSendWithTimeout(t *testing.T) {
 	s := NewLidarSender(logger, false)
 
 	s.Send(stat.StatResult{
-		Timestamp:  time.Date(2024, 1, 15, 10, 30, 45, 0, time.UTC),
-		ClientAddr: "10.0.0.1",
-		ServerAddr: "1.2.3.4",
-		Sent:       10,
-		Received:   8,
-		Loss:       2,
+		Timestamp:   time.Date(2024, 1, 15, 10, 30, 45, 0, time.UTC),
+		ClientAddr:  "10.0.0.1",
+		ServerAddr:  "1.2.3.4",
+		Sent:        10,
+		Received:    8,
+		Loss:        2,
 		SynAckCount: 8,
 	})
 
@@ -102,12 +102,12 @@ func TestLidarSenderSendVerboseNoPorts(t *testing.T) {
 
 	// timeout > 0 but no LossPortsCount — no extra line
 	s.Send(stat.StatResult{
-		Timestamp:  time.Date(2024, 1, 15, 10, 30, 45, 0, time.UTC),
-		ClientAddr: "10.0.0.1",
-		ServerAddr: "1.2.3.4",
-		Sent:       10,
-		Received:   9,
-		Loss:       1,
+		Timestamp:   time.Date(2024, 1, 15, 10, 30, 45, 0, time.UTC),
+		ClientAddr:  "10.0.0.1",
+		ServerAddr:  "1.2.3.4",
+		Sent:        10,
+		Received:    9,
+		Loss:        1,
 		SynAckCount: 9,
 	})
 
@@ -123,14 +123,14 @@ func TestLidarSenderRSTCount(t *testing.T) {
 	s := NewLidarSender(logger, false)
 
 	s.Send(stat.StatResult{
-		Timestamp:  time.Date(2024, 1, 15, 10, 30, 45, 0, time.UTC),
-		ClientAddr: "10.0.0.1",
-		ServerAddr: "1.2.3.4",
-		Sent:       10,
-		Received:   10,
-		Loss:       0,
+		Timestamp:   time.Date(2024, 1, 15, 10, 30, 45, 0, time.UTC),
+		ClientAddr:  "10.0.0.1",
+		ServerAddr:  "1.2.3.4",
+		Sent:        10,
+		Received:    10,
+		Loss:        0,
 		SynAckCount: 5,
-		RSTCount:   5,
+		RSTCount:    5,
 	})
 
 	output := buf.String()

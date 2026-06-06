@@ -80,12 +80,12 @@ func TestProcessParsedPacket(t *testing.T) {
 	}
 
 	s := &Scanner{
-		conf:        conf,
-		targets:     []string{"1.2.3.4"},
-		srcPort:     54321,
-		portCount:   100,
-		seqStart:    0,
-		stats:       map[string]stat.Stat{"1.2.3.4": st},
+		conf:      conf,
+		targets:   []string{"1.2.3.4"},
+		srcPort:   54321,
+		portCount: 100,
+		seqStart:  0,
+		stats:     map[string]stat.Stat{"1.2.3.4": st},
 	}
 
 	// Put a probe record so Received can find it
@@ -110,11 +110,11 @@ func TestProcessParsedPacketFiltersByServerPort(t *testing.T) {
 	}
 
 	s := &Scanner{
-		conf:        conf,
-		targets:     []string{"1.2.3.4"},
-		srcPort:     54321,
-		portCount:   100,
-		stats:       map[string]stat.Stat{},
+		conf:      conf,
+		targets:   []string{"1.2.3.4"},
+		srcPort:   54321,
+		portCount: 100,
+		stats:     map[string]stat.Stat{},
 	}
 
 	// Packet from wrong server port — should be ignored silently
@@ -131,11 +131,11 @@ func TestProcessParsedPacketFiltersByClientPortRange(t *testing.T) {
 	}
 
 	s := &Scanner{
-		conf:        conf,
-		targets:     []string{"1.2.3.4"},
-		srcPort:     54321,
-		portCount:   100,
-		stats:       map[string]stat.Stat{},
+		conf:      conf,
+		targets:   []string{"1.2.3.4"},
+		srcPort:   54321,
+		portCount: 100,
+		stats:     map[string]stat.Stat{},
 	}
 
 	// Packet to dstPort outside our range — should be ignored
@@ -373,13 +373,13 @@ func TestServeRecvProcessesPacket(t *testing.T) {
 	)
 
 	s := &Scanner{
-		conf:        conf,
-		logger:      logger,
-		targets:     []string{"1.2.3.4"},
-		srcPort:     54321,
-		portCount:   100,
-		seqStart:    0,
-		stats:       map[string]stat.Stat{"1.2.3.4": st},
+		conf:      conf,
+		logger:    logger,
+		targets:   []string{"1.2.3.4"},
+		srcPort:   54321,
+		portCount: 100,
+		seqStart:  0,
+		stats:     map[string]stat.Stat{"1.2.3.4": st},
 	}
 
 	// Put a probe record

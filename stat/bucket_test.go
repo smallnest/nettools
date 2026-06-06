@@ -1114,13 +1114,13 @@ func TestNewServerStat(t *testing.T) {
 
 func TestGetNextPorts(t *testing.T) {
 	tests := []struct {
-		name              string
-		clientPort        uint16
-		serverPort        uint16
-		clientPortRange   PortRange
-		serverPortRange   PortRange
-		wantClient        uint16
-		wantServer        uint16
+		name            string
+		clientPort      uint16
+		serverPort      uint16
+		clientPortRange PortRange
+		serverPortRange PortRange
+		wantClient      uint16
+		wantServer      uint16
 	}{
 		{
 			name:            "increment server port",
@@ -1320,8 +1320,8 @@ func TestBucketStatWithRSTAndSynAck(t *testing.T) {
 	bk.put(100, 200, 1, 1000)
 	bk.put(100, 200, 2, 1000)
 	bk.put(100, 200, 3, 1000)
-	bk.received(1, 100, false)   // SYN-ACK
-	bk.receivedRST(2, 200)    // RST
+	bk.received(1, 100, false) // SYN-ACK
+	bk.receivedRST(2, 200)     // RST
 	// seq 3: timeout (no response)
 
 	sr := bk.stat()

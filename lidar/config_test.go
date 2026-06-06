@@ -118,4 +118,3 @@ func TestConfigValidateAutoLocalAddr(t *testing.T) {
 		t.Error("LocalAddr should be auto-detected")
 	}
 }
-
