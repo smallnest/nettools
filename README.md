@@ -16,6 +16,25 @@ A suite of network diagnostic tools developed by Baidu's physical network black-
 > Produced by Baidu System Department
 
 
+## Installation
+
+```bash
+curl -fsSL https://nettools.rpcx.io/install.sh | sh
+```
+
+Or install to a specific directory:
+
+```bash
+BINDIR=~/.local/bin curl -fsSL https://nettools.rpcx.io/install.sh | sh
+```
+
+Or build from source:
+
+```bash
+make build
+```
+
+
 ## bitflip
 
 ![](docs/bitflip.png)

@@ -109,7 +109,7 @@ find_bindir() {
 
 # ── Download and install ─────────────────────────────────────────────
 
-install() {
+run_install() {
     platform=$(detect_platform)
     version=$(get_latest_version)
     bindir=$(find_bindir)
@@ -122,7 +122,7 @@ install() {
 
     info "Downloading nettools v${version} for ${platform}..."
 
-    if ! curl -fSL -o "${tmpdir}/${archive}" "$url"; then
+    if ! curl -fsSL -o "${tmpdir}/${archive}" "$url"; then
         error "Download failed."
         error "URL: ${url}"
         error "The release for your platform may not exist yet."
@@ -137,7 +137,8 @@ install() {
     installed=0
     for bin in bitflip bitflip6 baize lidar; do
         if [ -f "${tmpdir}/${bin}" ]; then
-            install -m 755 "${tmpdir}/${bin}" "${bindir}/${bin}"
+            cp "${tmpdir}/${bin}" "${bindir}/${bin}"
+            chmod 755 "${bindir}/${bin}"
             binaries="${binaries}  ${bindir}/${bin}\n"
             installed=$((installed + 1))
         fi
@@ -172,4 +173,4 @@ install() {
     fi
 }
 
-install
+run_install

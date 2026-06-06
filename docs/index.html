@@ -1551,6 +1551,69 @@
                     padding: 0 1rem;
                 }
             }
+
+            /* Install section */
+            .install-section {
+                text-align: center;
+                padding: 1.5rem 0 0.5rem;
+            }
+
+            .install-box {
+                display: inline-block;
+                max-width: 600px;
+                width: 100%;
+            }
+
+            .install-label {
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: #5b8a72;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 0.5rem;
+            }
+
+            .install-cmd {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: #1a1a1a;
+                border-radius: 8px;
+                padding: 0.75rem 1rem;
+                gap: 0.75rem;
+            }
+
+            .install-cmd code {
+                color: #e0e0e0;
+                font-family: "SF Mono", "Fira Code", monospace;
+                font-size: 0.85rem;
+                text-align: left;
+                overflow-x: auto;
+                white-space: nowrap;
+                flex: 1;
+            }
+
+            .install-copy {
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: #ccc;
+                border-radius: 4px;
+                padding: 0.25rem 0.75rem;
+                font-size: 0.8rem;
+                cursor: pointer;
+                white-space: nowrap;
+                transition: background 0.15s;
+            }
+
+            .install-copy:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+            .install-hint {
+                font-size: 0.78rem;
+                color: #999;
+                margin-top: 0.4rem;
+            }
         </style>
     </head>
     <body>
@@ -1762,6 +1825,18 @@
                     <div class="stat-label">
                         单机 pps 探测上限, rawsocket/单五元组
                     </div>
+                </div>
+            </div>
+
+            <!-- Install -->
+            <div class="install-section">
+                <div class="install-box">
+                    <div class="install-label">一键安装</div>
+                    <div class="install-cmd">
+                        <code>curl -fsSL https://nettools.rpcx.io/install.sh | sh</code>
+                        <button class="install-copy" onclick="navigator.clipboard.writeText('curl -fsSL https://nettools.rpcx.io/install.sh | sh');this.textContent='已复制';setTimeout(()=>this.textContent='复制',1500)">复制</button>
+                    </div>
+                    <div class="install-hint">支持 Linux / macOS（amd64 / arm64），自动选择可写目录安装</div>
                 </div>
             </div>
 

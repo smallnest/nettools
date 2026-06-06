@@ -16,6 +16,25 @@
 > 百度系统部出品
 
 
+## 安装
+
+```bash
+curl -fsSL https://nettools.rpcx.io/install.sh | sh
+```
+
+或者指定安装目录：
+
+```bash
+BINDIR=~/.local/bin curl -fsSL https://nettools.rpcx.io/install.sh | sh
+```
+
+或者从源码编译：
+
+```bash
+make build
+```
+
+
 ## bitflip
 
 ![](docs/bitflip.png)
