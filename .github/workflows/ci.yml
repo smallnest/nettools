@@ -10,6 +10,9 @@ jobs:
   go_badges:
     runs-on: ubuntu-latest
     name: A job to generate badges
+    permissions:
+      contents: write
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
 
