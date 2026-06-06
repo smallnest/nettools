@@ -11,7 +11,29 @@ jobs:
     runs-on: ubuntu-latest
     name: A job to generate badges
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.*"
+
+      - name: Generate coverage
+        id: coverage
+        run: |
+          go test -coverprofile=coverage.out $(go list ./... | grep -vE "vendor|/cmd")
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+
+      - name: Get Go Report Card
+        id: goreportcard
+        run: |
+          GRADE=$(curl -sS https://goreportcard.com/report/github.com/baidu/nettools | grep -oP 'grade is \K[A-F]\+?' | head -1 || echo "")
+          if [ -n "$GRADE" ]; then
+            echo "reportCard=Grade: $GRADE" >> $GITHUB_OUTPUT
+          else
+            echo "reportCard=" >> $GITHUB_OUTPUT
+          fi
+
       - id: badges
         uses: jacobkring/go-badges@v1.10.4
         with:
