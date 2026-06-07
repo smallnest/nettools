@@ -8,6 +8,10 @@ baize
 !baize/
 lidar
 !lidar/
+mping
+!mping/
+mping6
+!mping6/
 
 # Test and coverage artifacts
 coverage.html

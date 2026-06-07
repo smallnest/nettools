@@ -16,6 +16,7 @@ import (
 	"github.com/baidu/nettools/sonar/codec"
 	"github.com/baidu/nettools/sonar/config"
 	"github.com/baidu/nettools/stat"
+	"github.com/baidu/nettools/util"
 	"go.uber.org/ratelimit"
 )
 
@@ -187,14 +188,12 @@ func TestNewClient(t *testing.T) {
 	if len(c.peers) != 1 {
 		t.Errorf("expected 1 peer, got %d", len(c.peers))
 	}
-	if len(c.salts) != 4 {
-		t.Errorf("expected 4 salts, got %d", len(c.salts))
-	}
+	// Salts struct always has exactly 4 entries (0xFF, 0x00, 0x5A, complementary)
 
 	saltLen := c.conf.MsgLen - codec.MsgHeaderLen
-	for i, salt := range c.salts {
-		if len(salt) != saltLen {
-			t.Errorf("salt[%d] len = %d, want %d", i, len(salt), saltLen)
+	for i := range 4 {
+		if len(c.salts.Get(uint64(i))) != saltLen {
+			t.Errorf("salt[%d] len = %d, want %d", i, len(c.salts.Get(uint64(i))), saltLen)
 		}
 	}
 
@@ -232,27 +231,27 @@ func TestNewClientSaltPatterns(t *testing.T) {
 
 	saltLen := 128 - codec.MsgHeaderLen
 
-	for _, b := range c.salts[0] {
+	for _, b := range c.salts.Get(0) {
 		if b != 0xFF {
 			t.Error("salt[0] should be all 0xFF")
 			break
 		}
 	}
-	for _, b := range c.salts[1] {
+	for _, b := range c.salts.Get(1) {
 		if b != 0x00 {
 			t.Error("salt[1] should be all 0x00")
 			break
 		}
 	}
-	for _, b := range c.salts[2] {
+	for _, b := range c.salts.Get(2) {
 		if b != 0x5A {
 			t.Error("salt[2] should be all 0x5A")
 			break
 		}
 	}
-	expected := codec.ComplementaryBytes(saltLen)
-	if !bytes.Equal(c.salts[3], expected) {
-		t.Error("salt[3] should match codec.ComplementaryBytes")
+	expected := util.ComplementaryBytes(saltLen)
+	if !bytes.Equal(c.salts.Get(3), expected) {
+		t.Error("salt[3] should match util.ComplementaryBytes")
 	}
 }
 
@@ -444,7 +443,7 @@ func TestHandlePacket(t *testing.T) {
 
 	seq := uint64(1)
 	ts := time.Now().UnixNano()
-	salt := c.salts[int(seq%4)]
+	salt := c.salts.Get(seq)
 	payload := codec.Encode(seq, salt, ts, c.conf.MsgLen, 100, 0, 0)
 
 	pkt := makeTestUDPPacket(43500, 43500, payload)
@@ -468,7 +467,7 @@ func TestHandlePacketNoPeer(t *testing.T) {
 
 	seq := uint64(1)
 	ts := time.Now().UnixNano()
-	salt := c.salts[int(seq%4)]
+	salt := c.salts.Get(seq)
 	payload := codec.Encode(seq, salt, ts, c.conf.MsgLen, 100, 0, 0)
 	pkt := makeTestUDPPacket(43500, 43500, payload)
 
@@ -505,7 +504,7 @@ func TestHandlePacketBitflipEarlyReturn(t *testing.T) {
 
 	seq := uint64(1)
 	ts := time.Now().UnixNano()
-	salt := c.salts[int(seq%4)]
+	salt := c.salts.Get(seq)
 	payload := codec.Encode(seq, salt, ts, c.conf.MsgLen, 100, 0, 0)
 
 	// Corrupt the salt region
@@ -539,7 +538,7 @@ func TestHandlePacketBitflipSuppressedStillRecords(t *testing.T) {
 
 	seq := uint64(1)
 	ts := time.Now().UnixNano()
-	salt := c.salts[int(seq%4)]
+	salt := c.salts.Get(seq)
 	payload := codec.Encode(seq, salt, ts, c.conf.MsgLen, 100, 0, 0)
 
 	// Corrupt the salt
@@ -585,7 +584,7 @@ func TestDetectBitflipActive(t *testing.T) {
 	p := c.peers["127.0.0.1"]
 	seq := uint64(1)
 	ts := time.Now().UnixNano()
-	salt := c.salts[int(seq%4)]
+	salt := c.salts.Get(seq)
 	payload := codec.Encode(seq, salt, ts, c.conf.MsgLen, 100, 0, 0)
 
 	corrupted := make([]byte, len(payload))
@@ -607,7 +606,7 @@ func TestDetectBitflipSuppressed(t *testing.T) {
 	p := c.peers["127.0.0.1"]
 	seq := uint64(1)
 	ts := time.Now().UnixNano()
-	salt := c.salts[int(seq%4)]
+	salt := c.salts.Get(seq)
 	payload := codec.Encode(seq, salt, ts, c.conf.MsgLen, 100, 0, 0)
 
 	corrupted := make([]byte, len(payload))
@@ -628,7 +627,7 @@ func TestReadLoopNormalRead(t *testing.T) {
 
 	seq := uint64(1)
 	ts := time.Now().UnixNano()
-	salt := c.salts[int(seq%4)]
+	salt := c.salts.Get(seq)
 	payload := codec.Encode(seq, salt, ts, c.conf.MsgLen, 100, 0, 0)
 	pkt := makeTestUDPPacket(43500, 43500, payload)
 

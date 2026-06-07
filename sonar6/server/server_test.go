@@ -12,6 +12,7 @@ import (
 	"github.com/baidu/nettools/sonar/codec"
 	"github.com/baidu/nettools/sonar6/config"
 	"github.com/baidu/nettools/stat"
+	"github.com/baidu/nettools/util"
 )
 
 func testServerConfig(port int) *config.Config {
@@ -53,9 +54,7 @@ func TestNew(t *testing.T) {
 	if s == nil {
 		t.Fatal("expected non-nil server")
 	}
-	if len(s.salts) != 4 {
-		t.Errorf("expected 4 salts, got %d", len(s.salts))
-	}
+	// Salts struct always has exactly 4 entries (0xFF, 0x00, 0x5A, complementary)
 	if len(s.stats) != 1 {
 		t.Errorf("expected 1 stat entry, got %d", len(s.stats))
 	}
@@ -98,16 +97,16 @@ func TestNewSaltPatterns(t *testing.T) {
 	saltLen := 128 - codec.MsgHeaderLen
 
 	// Salt 0: all 0xFF
-	for _, b := range s.salts[0] {
+	for _, b := range s.salts.Get(0) {
 		if b != 0xFF {
 			t.Error("salt[0] should be all 0xFF")
 			break
 		}
 	}
 	// Salt 3: matches complementary alternating pattern
-	expected := codec.ComplementaryBytes(saltLen)
-	if !bytes.Equal(s.salts[3], expected) {
-		t.Error("salt[3] should match codec.ComplementaryBytes")
+	expected := util.ComplementaryBytes(saltLen)
+	if !bytes.Equal(s.salts.Get(3), expected) {
+		t.Error("salt[3] should match util.ComplementaryBytes")
 	}
 }
 
@@ -152,7 +151,7 @@ func TestServerEcho(t *testing.T) {
 
 	seq := uint64(42)
 	ts := time.Now().UnixNano()
-	salt := s.salts[int(seq%4)]
+	salt := s.salts.Get(seq)
 	payload := codec.Encode(seq, salt, ts, s.conf.MsgLen, 100, 0, 0)
 
 	if _, err := conn.Write(payload); err != nil {
@@ -204,7 +203,7 @@ func TestServerEchoAllSaltPatterns(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		seq := uint64(i)
 		ts := time.Now().UnixNano()
-		salt := s.salts[int(seq%4)]
+		salt := s.salts.Get(seq)
 		payload := codec.Encode(seq, salt, ts, s.conf.MsgLen, 50, 0, 0)
 
 		if _, err := conn.Write(payload); err != nil {
@@ -296,7 +295,7 @@ func TestServerBitflipEcho(t *testing.T) {
 	// Create a valid packet then corrupt the salt region
 	seq := uint64(1)
 	ts := time.Now().UnixNano()
-	salt := s.salts[int(seq%4)]
+	salt := s.salts.Get(seq)
 	payload := codec.Encode(seq, salt, ts, s.conf.MsgLen, 100, 0, 0)
 	payload[codec.MsgHeaderLen+3] ^= 0xFF
 
@@ -334,7 +333,7 @@ func TestServerRunCancel(t *testing.T) {
 
 	seq := uint64(1)
 	ts := time.Now().UnixNano()
-	salt := s.salts[int(seq%4)]
+	salt := s.salts.Get(seq)
 	payload := codec.Encode(seq, salt, ts, s.conf.MsgLen, 100, 0, 0)
 	_, _ = conn.Write(payload)
 

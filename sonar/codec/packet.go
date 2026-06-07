@@ -10,6 +10,8 @@ package codec
 import (
 	"bytes"
 	"encoding/binary"
+
+	"github.com/baidu/nettools/util"
 )
 
 const (
@@ -64,19 +66,6 @@ func IsValid(data []byte) bool {
 	return bytes.Equal(magicFlag, data[:magicFlagLen])
 }
 
-// ComplementaryBytes returns n bytes of alternating complementary 16-bit words:
-// 0xAA 0xAA 0x55 0x55 0xAA 0xAA 0x55 0x55 ...
-// Adjacent 16-bit words (0xAAAA and 0x5555) are bitwise complements,
-// making complementary bit-flips (the kind TCP/IP checksum cannot detect)
-// immediately visible via byte-level salt verification.
-func ComplementaryBytes(n int) []byte {
-	b := make([]byte, n)
-	for i := range b {
-		if (i/2)%2 == 0 {
-			b[i] = 0xAA
-		} else {
-			b[i] = 0x55
-		}
-	}
-	return b
-}
+// ComplementaryBytes returns n bytes of alternating complementary 16-bit words.
+// Delegated to util.ComplementaryBytes.
+var ComplementaryBytes = util.ComplementaryBytes

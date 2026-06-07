@@ -19,6 +19,7 @@ import (
 	"github.com/baidu/nettools/sonar/codec"
 	"github.com/baidu/nettools/sonar/config"
 	"github.com/baidu/nettools/stat"
+	"github.com/baidu/nettools/util"
 
 	"github.com/smallnest/goscapy/pkg/packet"
 	"go.uber.org/ratelimit"
@@ -52,7 +53,7 @@ type Client struct {
 
 	peers map[string]*peer
 
-	salts map[int][]byte
+	salts *util.Salts
 
 	// ExitOnReachLimit controls whether the client returns when the
 	// configured packet count or send duration limit is reached.
@@ -93,12 +94,7 @@ func NewClient(conf *config.Config, limiter ratelimit.Limiter,
 		listenPacket:     net.ListenPacket,
 	}
 
-	c.salts = map[int][]byte{
-		0: bytes.Repeat([]byte{0xFF}, conf.MsgLen-codec.MsgHeaderLen),
-		1: bytes.Repeat([]byte{0x00}, conf.MsgLen-codec.MsgHeaderLen),
-		2: bytes.Repeat([]byte{0x5A}, conf.MsgLen-codec.MsgHeaderLen),
-		3: codec.ComplementaryBytes(conf.MsgLen - codec.MsgHeaderLen),
-	}
+	c.salts = util.NewSalts(conf.MsgLen - codec.MsgHeaderLen)
 
 	c.initPeers()
 
@@ -233,7 +229,7 @@ func (c *Client) serveWrite(ctx context.Context) error {
 				curSent[p]++
 			}
 
-			payload := codec.Encode(bizSeq, c.salts[int(bizSeq%4)], ts, p.msgLen, lastSent[p], lastStartSrcPort[p], lastStartDstPort[p])
+			payload := codec.Encode(bizSeq, c.salts.Get(bizSeq), ts, p.msgLen, lastSent[p], lastStartSrcPort[p], lastStartDstPort[p])
 			data, err := codec.EncodeUDPPacket(p.localIP, p.serverIP, localPort, serverPort, uint8(c.conf.TOS), 64, payload)
 			if err != nil {
 				continue
@@ -364,7 +360,7 @@ func (c *Client) handlePacket(remote net.Addr, pkt []byte) {
 
 	hasBitflip := false
 	if len(payload) == c.conf.MsgLen {
-		salt := c.salts[int(seq%4)]
+		salt := c.salts.Get(seq)
 		if !bytes.Equal(salt, payload[codec.MsgHeaderLen:]) {
 			hasBitflip = c.detectBitflip(p, payload, salt, seq, ts)
 			if hasBitflip {

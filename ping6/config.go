@@ -20,8 +20,8 @@ type Config struct {
 	Count        int
 	SendDuration time.Duration
 
-	Size    int
-	TC      int // traffic class
+	Size     int
+	TC       int // traffic class
 	HopLimit int
 
 	Timeout time.Duration

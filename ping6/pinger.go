@@ -12,8 +12,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/baidu/nettools/checksum"
 	"github.com/baidu/nettools/stat"
+	"github.com/baidu/nettools/util"
 	"github.com/smallnest/goscapy/pkg/layers"
 	"github.com/smallnest/goscapy/pkg/packet"
 	"go.uber.org/ratelimit"
@@ -47,7 +47,7 @@ type Pinger struct {
 	targets []*target
 	pid     uint16
 
-	salts *checksum.Salts // salt patterns for bit-flip detection
+	salts *util.Salts // salt patterns for bit-flip detection
 
 	fd int
 	f  *os.File // keeps fd alive for timestamp options
@@ -79,7 +79,7 @@ func NewPinger(conf *Config, limiter ratelimit.Limiter, logger *log.Logger) *Pin
 		logger:  logger,
 		targets: targets,
 		pid:     pid,
-		salts:   checksum.NewSalts(conf.Size - timestampLen),
+		salts:   util.NewSalts(conf.Size - timestampLen),
 	}
 }
 
@@ -165,19 +165,33 @@ func (p *Pinger) openConn() error {
 // Returns bytes starting from the ICMPv6 header. The kernel adds the IPv6 header.
 func (p *Pinger) buildICMPv6Pkt(t *target, seq uint16, payload []byte) ([]byte, error) {
 	ipv6 := layers.NewIPv6()
-	ipv6.Set("src", p.conf.LocalAddr)
-	ipv6.Set("dst", t.addr)
-	ipv6.Set("hlim", uint8(p.conf.HopLimit))
+	if err := ipv6.Set("src", p.conf.LocalAddr); err != nil {
+		return nil, fmt.Errorf("set ipv6 src: %w", err)
+	}
+	if err := ipv6.Set("dst", t.addr); err != nil {
+		return nil, fmt.Errorf("set ipv6 dst: %w", err)
+	}
+	if err := ipv6.Set("hlim", uint8(p.conf.HopLimit)); err != nil {
+		return nil, fmt.Errorf("set ipv6 hlim: %w", err)
+	}
 	if p.conf.TC > 0 {
-		ipv6.Set("ver_tc_fl", layers.MakeIPv6VerTCFL(uint8(p.conf.TC), 0))
+		if err := ipv6.Set("ver_tc_fl", layers.MakeIPv6VerTCFL(uint8(p.conf.TC), 0)); err != nil {
+			return nil, fmt.Errorf("set ipv6 ver_tc_fl: %w", err)
+		}
 	}
 
 	icmpHdr := layers.NewICMPv6()
-	icmpHdr.Set("type", layers.ICMPv6EchoRequest)
-	icmpHdr.Set("code", uint8(0))
+	if err := icmpHdr.Set("type", layers.ICMPv6EchoRequest); err != nil {
+		return nil, fmt.Errorf("set icmp type: %w", err)
+	}
+	if err := icmpHdr.Set("code", uint8(0)); err != nil {
+		return nil, fmt.Errorf("set icmp code: %w", err)
+	}
 
 	echoBody := layers.NewICMPv6Echo(t.icmpID, seq)
-	echoBody.Set("data", payload)
+	if err := echoBody.Set("data", payload); err != nil {
+		return nil, fmt.Errorf("set echo data: %w", err)
+	}
 
 	pkt := packet.NewFrom(ipv6, icmpHdr, echoBody)
 

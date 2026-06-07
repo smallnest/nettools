@@ -17,6 +17,7 @@ import (
 	"github.com/baidu/nettools/sonar/codec"
 	"github.com/baidu/nettools/sonar6/config"
 	"github.com/baidu/nettools/stat"
+	"github.com/baidu/nettools/util"
 )
 
 // Server listens for IPv6 UDP probe packets and echoes them back to clients,
@@ -27,7 +28,7 @@ type Server struct {
 	mu      sync.RWMutex
 	stats   map[string]stat.Stat // keyed by client IP
 	localIP net.IP
-	salts   map[int][]byte
+	salts   *util.Salts
 
 	statProcessor *stat.Processor
 	logger        *log.Logger
@@ -59,13 +60,8 @@ func New(conf *config.Config, statProcessor *stat.Processor, sender stat.Sender,
 		statProcessor: statProcessor,
 		logger:        logger,
 		sender:        sender,
-		salts: map[int][]byte{
-			0: bytes.Repeat([]byte{0xFF}, conf.MsgLen-codec.MsgHeaderLen),
-			1: bytes.Repeat([]byte{0x00}, conf.MsgLen-codec.MsgHeaderLen),
-			2: bytes.Repeat([]byte{0x5A}, conf.MsgLen-codec.MsgHeaderLen),
-			3: codec.ComplementaryBytes(conf.MsgLen - codec.MsgHeaderLen),
-		},
-		localIP: localIP,
+		salts:         util.NewSalts(conf.MsgLen - codec.MsgHeaderLen),
+		localIP:       localIP,
 	}
 
 	for _, addr := range conf.ClientAddrs {
@@ -126,7 +122,7 @@ func (s *Server) readPackets(port int) {
 
 		hasBitflip := false
 		if n == s.conf.MsgLen {
-			salt := s.salts[int(seq%4)]
+			salt := s.salts.Get(seq)
 			if !bytes.Equal(salt, data[codec.MsgHeaderLen:n]) {
 				hasBitflip = true
 				for i, v := range data[codec.MsgHeaderLen:n] {

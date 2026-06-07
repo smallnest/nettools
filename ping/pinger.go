@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/baidu/nettools/checksum"
 	"github.com/baidu/nettools/stat"
+	"github.com/baidu/nettools/util"
 	"github.com/smallnest/goscapy/pkg/goscapy"
 	"github.com/smallnest/goscapy/pkg/layers"
 	"github.com/smallnest/goscapy/pkg/packet"
@@ -47,7 +47,7 @@ type Pinger struct {
 	targets []*target
 	pid     uint16
 
-	salts *checksum.Salts // salt patterns for bit-flip detection
+	salts *util.Salts // salt patterns for bit-flip detection
 
 	conn *net.IPConn
 	fd   int
@@ -81,7 +81,7 @@ func NewPinger(conf *Config, limiter ratelimit.Limiter, logger *log.Logger) *Pin
 		logger:  logger,
 		targets: targets,
 		pid:     pid,
-		salts:   checksum.NewSalts(conf.Size - timestampLen),
+		salts:   util.NewSalts(conf.Size - timestampLen),
 	}
 }
 
@@ -226,7 +226,7 @@ func (p *Pinger) serveSend(ctx context.Context, stopCh chan struct{}) error {
 			// Build payload: timestamp (8 bytes LE) + deterministic salt.
 			sendPayload := make([]byte, p.conf.Size)
 			binary.LittleEndian.PutUint64(sendPayload[:timestampLen], uint64(now))
-			copy(sendPayload[timestampLen:], p.salts.Get(t.seq % 4))
+			copy(sendPayload[timestampLen:], p.salts.Get(t.seq%4))
 
 			data, err := p.buildICMPkt(t, seq, sendPayload)
 			if err != nil {
