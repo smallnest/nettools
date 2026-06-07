@@ -292,12 +292,14 @@ func (p *Pinger) serveRecv(stopCh <-chan struct{}) error {
 }
 
 // processPacket parses raw bytes from the ICMPv6 socket.
-// With SOCK_RAW on macOS, data may include the IPv6 header or start at ICMPv6.
+// On macOS, SOCK_RAW+IPPROTO_ICMPV6 returns data starting at the ICMPv6
+// header (the kernel strips the IPv6 header). Try ICMPv6 first, then IPv6.
 func (p *Pinger) processPacket(raw []byte, from syscall.Sockaddr, rxts int64) {
-	// Try IPv6 first, fall back to ICMPv6 (macOS may strip the IPv6 header).
-	pkt, err := packet.DissectByProto(raw, "IPv6")
+	// Try ICMPv6 first — on macOS the kernel may strip the IPv6 header.
+	pkt, err := packet.DissectByProto(raw, "ICMPv6")
 	if err != nil {
-		pkt, err = packet.DissectByProto(raw, "ICMPv6")
+		// Fall back to IPv6+ICMPv6 (Linux includes the IPv6 header).
+		pkt, err = packet.DissectByProto(raw, "IPv6")
 		if err != nil {
 			p.logger.Printf("[DEBUG] dissect failed (%d bytes): %v", len(raw), err)
 			return
