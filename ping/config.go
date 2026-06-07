@@ -90,36 +90,87 @@ func (c *Config) Validate() error {
 func resolveLocalIP() (string, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
-		return "", fmt.Errorf("failed to get hostname: %w", err)
+		return resolveLocalIPFromInterfaces()
 	}
 	addrs, err := net.LookupHost(hostname)
-	if err != nil {
-		return "", fmt.Errorf("failed to lookup %q: %w", hostname, err)
-	}
-	for _, addr := range addrs {
-		if ip := net.ParseIP(addr); ip != nil && ip.To4() != nil && !ip.IsLoopback() {
-			return addr, nil
+	if err == nil {
+		for _, addr := range addrs {
+			if ip := net.ParseIP(addr); ip != nil && ip.To4() != nil && !ip.IsLoopback() {
+				return addr, nil
+			}
 		}
 	}
-	if len(addrs) > 0 {
-		return addrs[0], nil
-	}
-	return "", fmt.Errorf("no address found for hostname %q", hostname)
+	return resolveLocalIPFromInterfaces()
 }
 
-// findInterfaceByIP returns the interface name that has the given IP address.
+func resolveLocalIPFromInterfaces() (string, error) {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return "", fmt.Errorf("failed to list interfaces: %w", err)
+	}
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok {
+				ip := ipnet.IP
+				if ip.To4() != nil && !ip.IsLoopback() {
+					return ip.String(), nil
+				}
+			}
+		}
+	}
+	return "", fmt.Errorf("no IPv4 address found on any non-loopback interface")
+}
+
+// findInterfaceByIP returns the interface name that has the given IP address,
+// preferring non-loopback interfaces.
 func findInterfaceByIP(ipStr string) string {
+	targetIP := net.ParseIP(ipStr)
+
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return ""
 	}
+
+	// If the IP is a loopback address, handle it directly.
+	if targetIP != nil && targetIP.IsLoopback() {
+		for _, iface := range ifaces {
+			if iface.Flags&net.FlagLoopback != 0 {
+				return iface.Name
+			}
+		}
+		return ""
+	}
+
+	// First pass: find a non-loopback interface with the exact IP.
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.Equal(targetIP) {
+				return iface.Name
+			}
+		}
+	}
+	// Second pass: any interface (including loopback).
 	for _, iface := range ifaces {
 		addrs, err := iface.Addrs()
 		if err != nil {
 			continue
 		}
 		for _, addr := range addrs {
-			if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.String() == ipStr {
+			if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.Equal(targetIP) {
 				return iface.Name
 			}
 		}

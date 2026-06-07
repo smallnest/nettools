@@ -270,6 +270,9 @@ func (p *Pinger) serveRecv(stopCh <-chan struct{}) error {
 			if err == syscall.EAGAIN || err == syscall.EWOULDBLOCK {
 				continue
 			}
+			if err == syscall.EINTR {
+				continue
+			}
 			if isTimeout(err) {
 				continue
 			}

@@ -99,44 +99,96 @@ func validateIPv6(addr string) error {
 }
 
 // resolveLocalIPv6 returns the first non-loopback IPv6 address associated
-// with the current hostname.
+// with the current hostname. Falls back to scanning network interfaces.
 func resolveLocalIPv6() (string, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
-		return "", fmt.Errorf("failed to get hostname: %w", err)
+		// Fall through to interface scan.
+		return resolveLocalIPv6FromInterfaces()
 	}
 	addrs, err := net.LookupHost(hostname)
-	if err != nil {
-		return "", fmt.Errorf("failed to lookup %q: %w", hostname, err)
-	}
-	for _, addr := range addrs {
-		ip := net.ParseIP(addr)
-		if ip != nil && ip.To4() == nil && ip.To16() != nil && !ip.IsLoopback() {
-			return addr, nil
+	if err == nil {
+		for _, addr := range addrs {
+			ip := net.ParseIP(addr)
+			if ip != nil && ip.To4() == nil && !ip.IsLoopback() {
+				return addr, nil
+			}
 		}
 	}
-	if len(addrs) > 0 {
-		return addrs[0], nil
-	}
-	return "", fmt.Errorf("no IPv6 address found for hostname %q", hostname)
+	return resolveLocalIPv6FromInterfaces()
 }
 
-// findInterfaceByIPv6 returns the interface name that has the given IPv6 address.
-func findInterfaceByIPv6(ipStr string) string {
+// resolveLocalIPv6FromInterfaces scans network interfaces for a non-loopback
+// global unicast IPv6 address with an IPv6 default route.
+func resolveLocalIPv6FromInterfaces() (string, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
-		return ""
+		return "", fmt.Errorf("failed to list interfaces: %w", err)
 	}
 	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
 		addrs, err := iface.Addrs()
 		if err != nil {
 			continue
 		}
 		for _, addr := range addrs {
 			if ipnet, ok := addr.(*net.IPNet); ok {
-				if ipnet.IP.Equal(net.ParseIP(ipStr)) {
-					return iface.Name
+				ip := ipnet.IP
+				if ip.To4() == nil && ip.To16() != nil && ip.IsGlobalUnicast() {
+					return ip.String(), nil
 				}
+			}
+		}
+	}
+	return "", fmt.Errorf("no global unicast IPv6 address found on any non-loopback interface")
+}
+
+// findInterfaceByIPv6 returns the interface name that has the given IPv6 address,
+// preferring non-loopback interfaces.
+func findInterfaceByIPv6(ipStr string) string {
+	targetIP := net.ParseIP(ipStr)
+
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return ""
+	}
+
+	// If the IP is a loopback address, handle it directly.
+	if targetIP != nil && targetIP.IsLoopback() {
+		for _, iface := range ifaces {
+			if iface.Flags&net.FlagLoopback != 0 {
+				return iface.Name
+			}
+		}
+		return ""
+	}
+
+	// First pass: find a non-loopback interface with the exact IP.
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.Equal(targetIP) {
+				return iface.Name
+			}
+		}
+	}
+	// Second pass: any interface (including loopback).
+	for _, iface := range ifaces {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.Equal(targetIP) {
+				return iface.Name
 			}
 		}
 	}
